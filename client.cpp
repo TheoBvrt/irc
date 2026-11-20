@@ -11,9 +11,19 @@ int main(int argc, char *argv[])
 
 	connect(clientSocket, (struct sockaddr*)&serverAddress,
 		sizeof(serverAddress));
+		
+	for (size_t i = 0; i < 5; i++)
+	{
+		const char* message;
 
-	const char* message = argv[1];
-	send(clientSocket, message, strlen(message), 0);
+		std::string tmp;
+		std::cout << "Enter message";
+		std::getline(std::cin, tmp);
+
+		message = tmp.c_str();
+		send(clientSocket, message, strlen(message), 0);
+	}
+	
 
 	close(clientSocket);
 

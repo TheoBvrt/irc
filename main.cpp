@@ -43,7 +43,33 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					//client socket
+					char buffer[1024];
+
+					int bytesReceived = recv(pollfds[i].fd, buffer, sizeof(buffer), 0);
+
+					if (bytesReceived == 0)
+					{
+		
+						std::cout << "Client disconnected: " << pollfds[i].fd << std::endl;
+
+						close(pollfds[i].fd);
+						pollfds.erase(pollfds.begin() + i);
+						i--;
+					}
+					else if (bytesReceived < 0)
+					{
+			
+						std::cerr << "recv error" << std::endl;
+
+						close(pollfds[i].fd);
+						pollfds.erase(pollfds.begin() + i);
+						i--;
+					}
+					else
+					{
+						buffer[bytesReceived] = '\0';
+						std::cout << "Received: " << buffer << std::endl;
+					}
 				}
 			}
 		}
