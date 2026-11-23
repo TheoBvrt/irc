@@ -3,14 +3,27 @@
 int main(int argc, char *argv[])
 {
 	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (serverSocket < 0)
+		return (perror("socket"), 1);
 
-	sockaddr_in serverAddress;
+	int opt = 1;
+	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+	sockaddr_in serverAddress = {};
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(8080);
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
-	bind(serverSocket, (struct sockaddr*)&serverAddress,
-		sizeof(serverAddress));
-	listen(serverSocket, 5);
+
+	if (bind(serverSocket, (struct sockaddr*)&serverAddress,
+		sizeof(serverAddress)) < 0)
+		return (perror("bind"), 1);
+
+	std::cout << "BIND OK" << std::endl;
+
+	if (listen(serverSocket, 5) < 0)
+		return (perror("listen"), 1);
+
+	std::cout << "LISTEN OK" << std::endl;
 
 	std::vector<pollfd> pollfds;
 
@@ -20,6 +33,8 @@ int main(int argc, char *argv[])
 	tmpPollFd.revents = 0;
 
 	pollfds.push_back(tmpPollFd);
+
+	std::string finalBuff;
 
 	while (true)
 	{
@@ -58,7 +73,6 @@ int main(int argc, char *argv[])
 					}
 					else if (bytesReceived < 0)
 					{
-			
 						std::cerr << "recv error" << std::endl;
 
 						close(pollfds[i].fd);
@@ -68,14 +82,18 @@ int main(int argc, char *argv[])
 					else
 					{
 						buffer[bytesReceived] = '\0';
-						std::cout << "Received: " << buffer << std::endl;
+
+						if (strstr(buffer, "\r\n") == NULL)
+							finalBuff.append(buffer, bytesReceived);
+						else
+						{
+							finalBuff.app
+						}
 					}
 				}
 			}
 		}
-		
 	}
-
 	close(serverSocket);
 		return 0;
 }
