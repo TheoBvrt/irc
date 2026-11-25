@@ -7,6 +7,7 @@ class Server {
 	private:
 		int _serverPort;
 		std::map<int, std::string> _socketBuffers;
+		std::vector<std::string> _commandQueue;
 	
 	public:
 		Server(int serverPort);

@@ -21,6 +21,7 @@ Server& Server::operator=(const Server& other)
     {
 		_serverPort = other._serverPort;
 		_socketBuffers = other._socketBuffers;
+		_commandQueue = other._commandQueue;
 	}
 	return *this;
 }
@@ -61,7 +62,7 @@ int Server::start()
 
 	while (true)
 	{
-		poll(pollfds.data(), pollfds.size(), 5000);
+		poll(pollfds.data(), pollfds.size(), 1000);
 
 		for (size_t i = 0; i < pollfds.size(); i++)
 		{
@@ -74,9 +75,7 @@ int Server::start()
 					tmpPollFd.fd = newClientFd;
 					tmpPollFd.events = POLLIN;
 					tmpPollFd.revents = 0;
-
 					pollfds.push_back(tmpPollFd);
-
 					this->_socketBuffers.insert(std::pair<int, std::string>(newClientFd, ""));	
 				}
 				else
@@ -87,10 +86,7 @@ int Server::start()
 
 					if (bytesReceived == 0)
 					{
-		
 						std::cout << "Client disconnected: " << pollfds[i].fd << std::endl;
-
-
 						this->_socketBuffers.erase(pollfds[i].fd);
 						close(pollfds[i].fd);
 						pollfds.erase(pollfds.begin() + i);
@@ -99,7 +95,6 @@ int Server::start()
 					else if (bytesReceived < 0)
 					{
 						std::cerr << "recv error" << std::endl;
-
 						close(pollfds[i].fd);
 						pollfds.erase(pollfds.begin() + i);
 						i--;
@@ -112,16 +107,16 @@ int Server::start()
 						size_t pos = this->_socketBuffers[pollfds[i].fd].find("\r\n");
 						while (pos != std::string::npos)
 						{
-							std::string newCommand = this->_socketBuffers[pollfds[i].fd].substr(0, pos);
+							this->_commandQueue.push_back(this->_socketBuffers[pollfds[i].fd].substr(0, pos));
 							this->_socketBuffers[pollfds[i].fd].erase(0, pos + 2);
-
-							std::cout << "["<< pollfds[i].fd << "]New command : " << newCommand << std::endl;
 							pos = this->_socketBuffers[pollfds[i].fd].find("\r\n");
 						}
 					}
 				}
 			}
 		}
+		for (int i = 0; i < this->_commandQueue.size(); i ++)
+			std::cout << "cmd : " << this->_commandQueue[i] << std::endl;
 	}
 	close(serverSocket);
 	return 0;

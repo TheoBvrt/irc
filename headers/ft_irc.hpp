@@ -22,6 +22,4 @@
 # include <poll.h>
 # include <unistd.h>
 
-# include "Server.hpp"
-
 #endif
