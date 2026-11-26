@@ -3,6 +3,8 @@
 
 # include "ft_irc.hpp"
 
+class Server;
+
 class Client {
     private:
         int _fd;
@@ -20,13 +22,15 @@ class Client {
         bool _isAuthentifcated;
 
     public:
-        Client();
+        Client(const int fd);
         ~Client();
         Client(const Client& other);
         Client& operator=(const Client& other);
 
 		int getFd(void) const;
 		std::string getNickName(void) const;
+		
+		void fillBuffer(const char buffer[1024], int bytesReceived, Server& server);
 };
 
 #endif

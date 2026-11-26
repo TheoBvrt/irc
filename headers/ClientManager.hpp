@@ -3,13 +3,16 @@
 
 # include "ft_irc.hpp"
 # include "Client.hpp"
+
 class Client;
+class Server;
 
 class ClientManager {
 	private:
 		std::vector<Client> _clients;
+		Server& _server;
 	public:
-		ClientManager();
+		ClientManager(Server& server);
 		~ClientManager();
 		ClientManager(const ClientManager& other);
 		ClientManager& operator=(const ClientManager& other);
@@ -17,8 +20,11 @@ class ClientManager {
 		Client* getClient(const int fd);
 		Client* getClient(const std::string nickName);
 
-		void addClient();
-		void deleteClientByFd();
+		void addClient(const int fd);
+		void deleteClient(const int fd);
+		void deleteClient(const std::string nickName);
+		int getClientsSize() const ;
+		
 };
 
 #endif

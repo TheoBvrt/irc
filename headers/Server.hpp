@@ -2,6 +2,7 @@
 # define SERVER_HPP
 
 # include "ft_irc.hpp"
+# include "ClientManager.hpp"
 
 class Server {
 	private:
@@ -9,6 +10,7 @@ class Server {
 		std::map<int, std::string> _socketBuffers;
 		std::vector<std::string> _commandQueue;
 	
+		ClientManager _clientManager;
 	public:
 		Server(int serverPort);
 		~Server();
@@ -16,6 +18,7 @@ class Server {
 		Server& operator=(const Server& other);
 		
 		int start();
+		void addCommandToQueue(const int fd, const std::string cmd);
 };
 
 #endif

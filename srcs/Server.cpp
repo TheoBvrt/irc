@@ -1,8 +1,8 @@
 #include "Server.hpp"
 
 Server::Server(int serverPort)
+	: _serverPort(serverPort), _clientManager(*this)
 {
-	_serverPort = serverPort;
 }
 
 Server::~Server()
@@ -11,8 +11,10 @@ Server::~Server()
 }
 
 Server::Server(const Server& other)
+	: _serverPort(other._serverPort), _clientManager(*this)
 {
-	*this = other;
+	_socketBuffers = other._socketBuffers;
+	_commandQueue = other._commandQueue;
 }
 
 Server& Server::operator=(const Server& other)
@@ -24,6 +26,11 @@ Server& Server::operator=(const Server& other)
 		_commandQueue = other._commandQueue;
 	}
 	return *this;
+}
+
+void Server::addCommandToQueue(const int fd, const std::string cmd)
+{
+	this->_commandQueue.push_back(cmd);
 }
 
 int Server::start()
@@ -76,7 +83,9 @@ int Server::start()
 					tmpPollFd.events = POLLIN;
 					tmpPollFd.revents = 0;
 					pollfds.push_back(tmpPollFd);
-					this->_socketBuffers.insert(std::pair<int, std::string>(newClientFd, ""));	
+		
+					
+					this->_clientManager.addClient(newClientFd);
 				}
 				else
 				{
@@ -87,7 +96,8 @@ int Server::start()
 					if (bytesReceived == 0)
 					{
 						std::cout << "Client disconnected: " << pollfds[i].fd << std::endl;
-						this->_socketBuffers.erase(pollfds[i].fd);
+
+						this->_clientManager.deleteClient(pollfds[i].fd);
 						close(pollfds[i].fd);
 						pollfds.erase(pollfds.begin() + i);
 						i--;
@@ -102,21 +112,17 @@ int Server::start()
 					else
 					{
 						buffer[bytesReceived] = '\0';
-						this->_socketBuffers[pollfds[i].fd].append(buffer, bytesReceived);
+						Client* client = this->_clientManager.getClient(pollfds[i].fd);
 
-						size_t pos = this->_socketBuffers[pollfds[i].fd].find("\r\n");
-						while (pos != std::string::npos)
-						{
-							this->_commandQueue.push_back(this->_socketBuffers[pollfds[i].fd].substr(0, pos));
-							this->_socketBuffers[pollfds[i].fd].erase(0, pos + 2);
-							pos = this->_socketBuffers[pollfds[i].fd].find("\r\n");
-						}
+						client->fillBuffer(buffer, bytesReceived, *this);
 					}
 				}
 			}
 		}
 		for (int i = 0; i < this->_commandQueue.size(); i ++)
 			std::cout << "cmd : " << this->_commandQueue[i] << std::endl;
+
+		std::cout << "(" << this->_clientManager.getClientsSize() << ")" << std::endl;
 	}
 	close(serverSocket);
 	return 0;

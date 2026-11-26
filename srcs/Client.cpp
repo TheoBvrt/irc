@@ -1,7 +1,9 @@
 #include "Client.hpp"
+#include "Server.hpp"
 
-Client::Client()
+Client::Client(const int fd)
 {
+	this->_fd = fd;
 }
 
 Client::~Client()
@@ -32,10 +34,22 @@ Client& Client::operator=(const Client& other)
 	return *this;
 }
 
+void Client::fillBuffer(const char buffer[1024], int bytesReceived, Server& server) {
+	this->_buffer.append(buffer, bytesReceived);
+
+	size_t pos = this->_buffer.find("\r\n");
+	while (pos != std::string::npos)
+	{
+		server.addCommandToQueue(this->_fd, this->_buffer.substr(0, pos));
+		this->_buffer.erase(0, pos + 2);
+		pos = this->_buffer.find("\r\n");
+	}
+}
+
 int Client::getFd(void) const {
 	return (this->_fd);
 }
 
 std::string Client::getNickName(void) const {
 	return (this->_nickName);
-} 
+}
