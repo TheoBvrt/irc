@@ -13,7 +13,6 @@ Server::~Server()
 Server::Server(const Server& other)
 	: _serverPort(other._serverPort), _clientManager(*this)
 {
-	_socketBuffers = other._socketBuffers;
 	_commandQueue = other._commandQueue;
 }
 
@@ -22,7 +21,6 @@ Server& Server::operator=(const Server& other)
 	if (this != &other)
     {
 		_serverPort = other._serverPort;
-		_socketBuffers = other._socketBuffers;
 		_commandQueue = other._commandQueue;
 	}
 	return *this;
@@ -30,7 +28,7 @@ Server& Server::operator=(const Server& other)
 
 void Server::addCommandToQueue(const int fd, const std::string cmd)
 {
-	this->_commandQueue.push_back(cmd);
+	this->_commandQueue.push_back(std::make_pair(fd, cmd));
 }
 
 int Server::start()
@@ -89,40 +87,49 @@ int Server::start()
 				}
 				else
 				{
+					int clientFd = pollfds[i].fd;
 					char buffer[1024];
-
-					int bytesReceived = recv(pollfds[i].fd, buffer, sizeof(buffer), 0);
+					int bytesReceived = recv(clientFd, buffer, sizeof(buffer), 0);
 
 					if (bytesReceived == 0)
 					{
-						std::cout << "Client disconnected: " << pollfds[i].fd << std::endl;
+						std::cout << "Client disconnected: " << clientFd << std::endl;
 
-						this->_clientManager.deleteClient(pollfds[i].fd);
-						close(pollfds[i].fd);
+						this->_clientManager.deleteClient(clientFd);
+
+						for (std::vector<std::pair<int, std::string> >::iterator it = this->_commandQueue.begin(); it != this->_commandQueue.end();)
+						{
+							if (it->first == clientFd)
+								it = this->_commandQueue.erase(it);
+							else
+								++it;
+						}
+
+						close(clientFd);
 						pollfds.erase(pollfds.begin() + i);
 						i--;
 					}
 					else if (bytesReceived < 0)
 					{
 						std::cerr << "recv error" << std::endl;
-						close(pollfds[i].fd);
+						close(clientFd);
 						pollfds.erase(pollfds.begin() + i);
 						i--;
 					}
 					else
 					{
 						buffer[bytesReceived] = '\0';
-						Client* client = this->_clientManager.getClient(pollfds[i].fd);
+						Client* client = this->_clientManager.getClient(clientFd);
 
 						client->fillBuffer(buffer, bytesReceived, *this);
 					}
 				}
 			}
 		}
-		for (int i = 0; i < this->_commandQueue.size(); i ++)
-			std::cout << "cmd : " << this->_commandQueue[i] << std::endl;
 
-		std::cout << "(" << this->_clientManager.getClientsSize() << ")" << std::endl;
+		for (size_t i = 0; i < this->_commandQueue.size(); i ++) {
+			std::cout << "client : [" << this->_commandQueue[i].first << "] -> " << this->_commandQueue[i].second << std::endl;
+		}
 	}
 	close(serverSocket);
 	return 0;
