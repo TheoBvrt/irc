@@ -19,7 +19,7 @@ Server::Server(const Server& other)
 Server& Server::operator=(const Server& other)
 {
 	if (this != &other)
-    {
+	{
 		_serverPort = other._serverPort;
 		_commandQueue = other._commandQueue;
 	}
@@ -134,3 +134,5 @@ int Server::start()
 	close(serverSocket);
 	return 0;
 }
+
+//   PRIVMSG #help :Hello everyone, I need some assistance.

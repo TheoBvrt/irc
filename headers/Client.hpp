@@ -6,26 +6,26 @@
 class Server;
 
 class Client {
-    private:
-        int _fd;
+	private:
+		int _fd;
 
-        std::string _buffer;
-        std::string _nickName;
-        std::string _userName;
-        std::string _realName;
-        std::string _hostNamel;
-        std::string _ipAddress;
+		std::string _buffer;
+		std::string _nickName;
+		std::string _userName;
+		std::string _realName;
+		std::string _hostName;
+		std::string _ipAddress;
 
-        bool _isOperator;
-        bool _isInvisible;
-        bool _isRegistered;
-        bool _isAuthentifcated;
+		bool _isOperator;
+		bool _isInvisible;
+		bool _isRegistered;
+		bool _isAuthentifcated;
 
-    public:
-        Client(const int fd);
-        ~Client();
-        Client(const Client& other);
-        Client& operator=(const Client& other);
+	public:
+		Client(const int fd);
+		~Client();
+		Client(const Client& other);
+		Client& operator=(const Client& other);
 
 		int getFd(void) const;
 		std::string getNickName(void) const;
